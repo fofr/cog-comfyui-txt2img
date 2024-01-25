@@ -3,9 +3,6 @@ import time
 import os
 import json
 
-from helpers.ComfyUI_Controlnet_Aux import ComfyUI_Controlnet_Aux
-from helpers.ComfyUI_AnimateDiff_Evolved import ComfyUI_AnimateDiff_Evolved
-
 UPDATED_WEIGHTS_MANIFEST_URL = f"https://weights.replicate.delivery/default/comfy-ui/weights.json?cache_bypass={int(time.time())}"
 UPDATED_WEIGHTS_MANIFEST_PATH = "updated_weights.json"
 WEIGHTS_MANIFEST_PATH = "weights.json"
@@ -83,36 +80,8 @@ class WeightsManifest:
                 weights_map.update(
                     self._generate_weights_map(self.weights_manifest[key], key.lower())
                 )
-        weights_map.update(ComfyUI_Controlnet_Aux.weights_map(BASE_URL))
-        weights_map.update(ComfyUI_AnimateDiff_Evolved.weights_map(BASE_URL))
         print("Allowed weights:")
         for weight in weights_map.keys():
             print(weight)
 
         return weights_map
-
-    def write_supported_weights(self):
-        weight_lists = {
-            "Checkpoints": self.weights_manifest.get("CHECKPOINTS", []),
-            "Upscale models": self.weights_manifest.get("UPSCALE_MODELS", []),
-            "CLIP Vision": self.weights_manifest.get("CLIP_VISION", []),
-            "LORAs": self.weights_manifest.get("LORAS", []),
-            "IPAdapter": self.weights_manifest.get("IPADAPTER", []),
-            "ControlNet": self.weights_manifest.get("CONTROLNET", []),
-            "VAE": self.weights_manifest.get("VAE", []),
-            "PhotoMaker": self.weights_manifest.get("PHOTOMAKER", []),
-            "AnimateDiff": ComfyUI_AnimateDiff_Evolved.models(),
-            "AnimateDiff LORAs": ComfyUI_AnimateDiff_Evolved.loras(),
-            "ControlNet Preprocessors": sorted(
-                {
-                    f"{repo}/{filename}"
-                    for filename, repo in ComfyUI_Controlnet_Aux.models().items()
-                }
-            ),
-        }
-        with open("supported_weights.md", "w") as f:
-            for weight_type, weights in weight_lists.items():
-                f.write(f"## {weight_type}\n\n")
-                for weight in weights:
-                    f.write(f"- {weight}\n")
-                f.write("\n")

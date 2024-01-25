@@ -6,29 +6,20 @@ import time
 import json
 import urllib
 import uuid
-import json
-import os
 import websocket
 import random
 from weights_downloader import WeightsDownloader
 from urllib.error import URLError
-
-# custom_nodes helpers
-from helpers.ComfyUI_IPAdapter_plus import ComfyUI_IPAdapter_plus
-from helpers.ComfyUI_Controlnet_Aux import ComfyUI_Controlnet_Aux
 
 
 class ComfyUI:
     def __init__(self, server_address):
         self.weights_downloader = WeightsDownloader()
         self.server_address = server_address
-        ComfyUI_IPAdapter_plus.prepare()
 
     def start_server(self, output_directory, input_directory):
         self.input_directory = input_directory
         self.output_directory = output_directory
-
-        self.download_pre_start_models()
 
         server_thread = threading.Thread(
             target=self.run_server, args=(output_directory, input_directory)
@@ -57,10 +48,6 @@ class ComfyUI:
         except URLError:
             return False
 
-    def download_pre_start_models(self):
-        # Some models need to be downloaded and loaded before starting ComfyUI
-        self.weights_downloader.download_torch_checkpoints()
-
     def handle_weights(self, workflow):
         print("Checking weights")
         weights_to_download = []
@@ -75,10 +62,6 @@ class ComfyUI:
         ]
 
         for node in workflow.values():
-            ComfyUI_Controlnet_Aux.add_controlnet_preprocessor_weight(
-                weights_to_download, node
-            )
-
             if "inputs" in node:
                 for input in node["inputs"].values():
                     if isinstance(input, str) and any(
@@ -176,13 +159,6 @@ class ComfyUI:
         self.handle_weights(wf)
         self.handle_inputs(wf)
         return wf
-
-    # TODO: Find a better way of doing this
-    # Nuclear reset
-    def reset_execution_cache(self):
-        with open("examples/reset.json", "r") as file:
-            reset_workflow = json.loads(file.read())
-        self.queue_prompt(reset_workflow)
 
     def randomise_input_seed(self, input_key, inputs):
         if input_key in inputs and isinstance(inputs[input_key], (int, float)):
