@@ -2,6 +2,7 @@
 **/.git
 **/.github
 **/.ci
+safety-cache/
 
 # Outputs
 *.jpg

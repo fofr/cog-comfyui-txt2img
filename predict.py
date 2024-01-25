@@ -5,6 +5,7 @@ import zipfile
 import json
 from typing import List
 from cog import BasePredictor, Input, Path
+from safety_checker import SafetyChecker
 from helpers.comfyui import ComfyUI
 from workflow_editor import WorkflowEditor
 
@@ -53,6 +54,7 @@ SCHEDULERS = [
 
 class Predictor(BasePredictor):
     def setup(self):
+        self.safetyChecker = SafetyChecker()
         self.comfyUI = ComfyUI("127.0.0.1:8188")
         self.comfyUI.start_server(OUTPUT_DIR, INPUT_DIR)
         self.workflowEditor = WorkflowEditor(self.comfyUI)
@@ -130,6 +132,9 @@ class Predictor(BasePredictor):
             choices=SCHEDULERS,
             default="normal",
         ),
+        disable_safety_checker: bool = Input(
+            description="Disable safety checker for generated images.", default=False
+        ),
     ) -> List[Path]:
         """Run a single prediction on the model"""
         self.cleanup()
@@ -162,5 +167,11 @@ class Predictor(BasePredictor):
         for directory in output_directories:
             print(f"Contents of {directory}:")
             files.extend(self.log_and_collect_files(directory))
+
+        if not disable_safety_checker:
+            has_nsfw_content = self.safetyChecker.run(files)
+            if any(has_nsfw_content):
+                print("Removing NSFW images")
+                files = [f for i, f in enumerate(files) if not has_nsfw_content[i]]
 
         return files
