@@ -147,7 +147,10 @@ class ComfyUI:
                 continue
 
     def load_workflow(self, workflow):
-        wf = json.loads(workflow)
+        if isinstance(workflow, str):
+            wf = json.loads(workflow)
+        else:
+            wf = workflow
 
         # There are two types of ComfyUI JSON
         # We need the API version
@@ -175,8 +178,6 @@ class ComfyUI:
 
     def run_workflow(self, workflow):
         print("Running workflow")
-        # self.reset_execution_cache()
-
         prompt_id = self.queue_prompt(workflow)
         self.wait_for_prompt_completion(workflow, prompt_id)
         output_json = self.get_history(prompt_id)
